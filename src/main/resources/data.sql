@@ -1,0 +1,6 @@
+INSERT INTO books (id, title, author, publication_date, category, isbn, rating, visible) VALUES (1, 'The Catcher in the Rye', 'J.D. Salinger', '1951-07-16', 'Fiction', '9780316769488', 5, true);
+INSERT INTO books (id, title, author, publication_date, category, isbn, rating, visible) VALUES (2, 'To Kill a Mockingbird', 'Harper Lee', '1960-07-11', 'Fiction', '9780061120084', 5, true);
+INSERT INTO books (id, title, author, publication_date, category, isbn, rating, visible) VALUES (3, '1984', 'George Orwell', '1949-06-08', 'Dystopian', '9780451524935', 5, true);
+INSERT INTO books (id, title, author, publication_date, category, isbn, rating, visible) VALUES (4, 'Pride and Prejudice', 'Jane Austen', '1813-01-28', 'Romance', '9781503290563', 4, true);
+INSERT INTO books (id, title, author, publication_date, category, isbn, rating, visible) VALUES (5, 'The Great Gatsby', 'F. Scott Fitzgerald', '1925-04-10', 'Fiction', '9780743273565', 5, true);
+INSERT INTO books (id, title, author, publication_date, category, isbn, rating, visible) VALUES (6, 'Moby Dick', 'Herman Melville', '1851-10-18', 'Adventure', '9781503280786', 4, false);
