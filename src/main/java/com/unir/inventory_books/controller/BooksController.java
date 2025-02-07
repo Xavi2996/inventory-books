@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Map;
 
 import com.unir.inventory_books.controller.model.BookDto;
+import com.unir.inventory_books.controller.responses.BookResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -31,7 +32,7 @@ public class BooksController {
     @ApiResponse(
             responseCode = "200",
             content = @Content(mediaType = "application/json", schema = @Schema(implementation = Book.class)))
-    public ResponseEntity<List<Book>> getBooks(
+    public ResponseEntity<BookResponse> getBooks(
             @RequestHeader Map<String, String> headers,
             @RequestParam(required = false) String title,
             @RequestParam(required = false) String author,
@@ -46,10 +47,14 @@ public class BooksController {
         List<Book> books = service.getBooks(title, author, publicationDate, category, isbn, rating, visible);
         log.info("books: {}", books);
 
-        if (books != null) {
-            return ResponseEntity.ok(books);
+        if (rating != null && (rating < 0 || rating > 5)) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new BookResponse(null, "El rating debe estar entre 0 y 5"));
+        }
+
+        if (books != null && !books.isEmpty()) {
+            return ResponseEntity.ok(new BookResponse(books, "Libros encontrados"));
         } else {
-            return ResponseEntity.ok(Collections.emptyList());
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new BookResponse(null, "No Se encontraron Libros"));
         }
     }
 
@@ -61,24 +66,20 @@ public class BooksController {
             responseCode = "404",
             content = @Content(mediaType = "application/json", schema = @Schema(implementation = Void.class)),
             description = "No se ha encontrado el libro con el identificador indicado.")
-    public ResponseEntity<Book> getBook(@PathVariable String bookId) {
+    public ResponseEntity<BookResponse> getBook(@PathVariable String bookId) {
 
         log.info("Request received for book {}", bookId);
         Book book = service.getBook(bookId);
 
         if (book != null) {
-            return ResponseEntity.ok(book);
+            return ResponseEntity.ok(new BookResponse(Collections.singletonList(book), "Libro encontrado"));
         } else {
-            return ResponseEntity.notFound().build();
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new BookResponse(null, "No se ha encontrado el libro con el identificador indicado."));
         }
 
     }
 
     @DeleteMapping("/books/{bookId}")
-    @Operation(
-            operationId = "Eliminar un libro",
-            description = "Operacion de escritura",
-            summary = "Se elimina un libro a partir de su identificador.")
     @ApiResponse(
             responseCode = "200",
             content = @Content(mediaType = "application/json", schema = @Schema(implementation = Void.class)))
@@ -86,27 +87,19 @@ public class BooksController {
             responseCode = "404",
             content = @Content(mediaType = "application/json", schema = @Schema(implementation = Void.class)),
             description = "No se ha encontrado el libro con el identificador indicado.")
-    public ResponseEntity<Void> deleteBook(@PathVariable String bookId) {
+    public ResponseEntity<BookResponse> deleteBook(@PathVariable String bookId) {
 
         Boolean removed = service.removeBook(bookId);
 
         if (Boolean.TRUE.equals(removed)) {
-            return ResponseEntity.ok().build();
+            return ResponseEntity.ok(new BookResponse(null, "Libro eliminado exitosamente"));
         } else {
-            return ResponseEntity.notFound().build();
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new BookResponse(null, "No se ha encontrado el libro con el identificador indicado"));
         }
 
     }
 
     @PostMapping("/books")
-    @Operation(
-            operationId = "Insertar un libro",
-            description = "Operacion de escritura",
-            summary = "Se crea un libro a partir de sus datos.",
-            requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody(
-                    description = "Datos del libro a crear.",
-                    required = true,
-                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = CreateBookRequest.class))))
     @ApiResponse(
             responseCode = "201",
             content = @Content(mediaType = "application/json", schema = @Schema(implementation = Book.class)))
@@ -118,27 +111,19 @@ public class BooksController {
             responseCode = "404",
             content = @Content(mediaType = "application/json", schema = @Schema(implementation = Void.class)),
             description = "No se ha encontrado el libro con el identificador indicado.")
-    public ResponseEntity<Book> addBook(@RequestBody CreateBookRequest request) {
+    public ResponseEntity<BookResponse> addBook(@RequestBody CreateBookRequest request) {
 
         Book createdBook = service.createBook(request);
 
         if (createdBook != null) {
-            return ResponseEntity.status(HttpStatus.CREATED).body(createdBook);
+            return ResponseEntity.status(HttpStatus.CREATED).body(new BookResponse(Collections.singletonList(createdBook), "Libro creado"));
         } else {
-            return ResponseEntity.badRequest().build();
+            return ResponseEntity.badRequest().body(new BookResponse(null, "Datos introducidos incorrectos"));
         }
     }
 
 
     @PatchMapping("/books/{bookId}")
-    @Operation(
-            operationId = "Modificar parcialmente un libro",
-            description = "RFC 7386. Operacion de escritura",
-            summary = "RFC 7386. Se modifica parcialmente un libro.",
-            requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody(
-                    description = "Datos del libro a crear.",
-                    required = true,
-                    content = @Content(mediaType = "application/merge-patch+json", schema = @Schema(implementation = String.class))))
     @ApiResponse(
             responseCode = "200",
             content = @Content(mediaType = "application/json", schema = @Schema(implementation = Book.class)))
@@ -146,26 +131,18 @@ public class BooksController {
             responseCode = "400",
             content = @Content(mediaType = "application/json", schema = @Schema(implementation = Void.class)),
             description = "Libro inválido o datos incorrectos introducidos.")
-    public ResponseEntity<Book> patchBook(@PathVariable String bookId, @RequestBody String patchBody) {
+    public ResponseEntity<BookResponse> patchBook(@PathVariable String bookId, @RequestBody String patchBody) {
 
         Book patched = service.updateBook(bookId, patchBody);
         if (patched != null) {
-            return ResponseEntity.ok(patched);
+            return ResponseEntity.ok(new BookResponse(Collections.singletonList(patched), "Libro actualizado"));
         } else {
-            return ResponseEntity.badRequest().build();
+            return ResponseEntity.badRequest().body(new BookResponse(null, "Libro inválido o datos incorrectos introducidos"));
         }
     }
 
 
     @PutMapping("/books/{bookId}")
-    @Operation(
-            operationId = "Modificar totalmente un libro",
-            description = "Operacion de escritura",
-            summary = "Se modifica totalmente un libro.",
-            requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody(
-                    description = "Datos del libro a actualizar.",
-                    required = true,
-                    content = @Content(mediaType = "application/merge-patch+json", schema = @Schema(implementation = BookDto.class))))
     @ApiResponse(
             responseCode = "200",
             content = @Content(mediaType = "application/json", schema = @Schema(implementation = Book.class)))
@@ -173,11 +150,11 @@ public class BooksController {
             responseCode = "404",
             content = @Content(mediaType = "application/json", schema = @Schema(implementation = Void.class)),
             description = "Libro no encontrado.")
-    public ResponseEntity<Book> updateBook(@PathVariable String bookId, @RequestBody BookDto body) {
+    public ResponseEntity<BookResponse> updateBook(@PathVariable String bookId, @RequestBody BookDto body) {
 
         Book updated = service.updateBook(bookId, body);
         if (updated != null) {
-            return ResponseEntity.ok(updated);
+            return ResponseEntity.ok(new BookResponse(Collections.singletonList(updated), "Libro actualizado"));
         } else {
             return ResponseEntity.notFound().build();
         }
